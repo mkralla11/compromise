@@ -12,6 +12,9 @@ const methods = {
   normal: function(r) {
     return r.normal;
   },
+  captureName: function(r){
+    return r.captureName;
+  },
   /** even-more normalized than normal */
   root: function(r) {
     return r.root || r.normal;

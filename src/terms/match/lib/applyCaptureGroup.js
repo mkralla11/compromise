@@ -3,6 +3,7 @@
 const applyCaptureGroup = (term, reg) => {
   if (reg.capture) {
     term.captureGroup = true;
+    term.captureName = reg.captureName;
   } else {
     term.captureGroup = undefined;
   }

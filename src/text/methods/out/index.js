@@ -78,6 +78,12 @@ const methods = {
       })
       .join('\n');
   },
+  captureNames: function(r){
+    return r.list.reduce((acc, ts) => {
+      Object.assign(acc, ts.out('captureNames'));
+      return acc;
+    }, {});
+  },
   json: r => {
     return r.list.reduce((arr, ts) => {
       let terms = ts.terms.map(t => {

@@ -52,7 +52,16 @@ const methods = {
   csv: function(ts) {
     return ts.terms.map(t => t.normal.replace(/,/g, '')).join(',');
   },
-
+  captureNames: function(ts) {
+    return ts.terms
+      .reduce((acc, t) => {
+        const cn = t.out('captureName');
+        if(cn){
+          acc[cn] = t.out('normal');
+        }
+        return acc;
+      }, {});
+  },
   newlines: function(ts) {
     return ts.terms
       .reduce((str, t) => {

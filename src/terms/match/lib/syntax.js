@@ -146,7 +146,9 @@ const parse_all = function(input) {
   }
   regs = regs.filter((f) => f);
   let captureOn = false;
+  
   regs = regs.map((reg) => {
+    let captureName;
     let hasEnd = false;
     //support [#Noun] capture-group syntax
     if (reg.charAt(0) === '[') {
@@ -158,9 +160,21 @@ const parse_all = function(input) {
       captureOn = false;
       hasEnd = true;
     }
+
+    const closeIdx = reg.indexOf(']'); 
+    //support [#Noun]:captureName named capture
+    if (closeIdx !== -1 && reg[closeIdx + 1] === ':') {
+      captureName = reg.slice(closeIdx + 2);
+      reg = reg.slice(0, closeIdx);
+      captureOn = false;
+      hasEnd = true;
+    }
+
+
     reg = parse_term(reg);
     if (captureOn === true || hasEnd === true) {
       reg.capture = true;
+      reg.captureName = captureName;
     }
     return reg;
   });
