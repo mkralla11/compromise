@@ -9064,6 +9064,9 @@ var methods = {
   normal: function normal(r) {
     return r.normal;
   },
+  captureName: function captureName(r) {
+    return r.captureName;
+  },
   /** even-more normalized than normal */
   root: function root(r) {
     return r.root || r.normal;
@@ -9767,6 +9770,7 @@ module.exports = matchMethods;
 var applyCaptureGroup = function applyCaptureGroup(term, reg) {
   if (reg.capture) {
     term.captureGroup = true;
+    term.captureName = reg.captureName;
   } else {
     term.captureGroup = undefined;
   }
@@ -10355,7 +10359,9 @@ var parse_all = function parse_all(input) {
     return f;
   });
   var captureOn = false;
+
   regs = regs.map(function (reg) {
+    var captureName = void 0;
     var hasEnd = false;
     //support [#Noun] capture-group syntax
     if (reg.charAt(0) === '[') {
@@ -10367,9 +10373,20 @@ var parse_all = function parse_all(input) {
       captureOn = false;
       hasEnd = true;
     }
+
+    var closeIdx = reg.indexOf(']');
+    //support [#Noun]:captureName named capture
+    if (closeIdx !== -1 && reg[closeIdx + 1] === ':') {
+      captureName = reg.slice(closeIdx + 2);
+      reg = reg.slice(0, closeIdx);
+      captureOn = false;
+      hasEnd = true;
+    }
+
     reg = parse_term(reg);
     if (captureOn === true || hasEnd === true) {
       reg.capture = true;
+      reg.captureName = captureName;
     }
     return reg;
   });
@@ -10916,7 +10933,15 @@ var methods = {
       return t.normal.replace(/,/g, '');
     }).join(',');
   },
-
+  captureNames: function captureNames(ts) {
+    return ts.terms.reduce(function (acc, t) {
+      var cn = t.out('captureName');
+      if (cn) {
+        acc[cn] = t.out('normal');
+      }
+      return acc;
+    }, {});
+  },
   newlines: function newlines(ts) {
     return ts.terms.reduce(function (str, t) {
       str += t.out('text').replace(/\n/g, ' ');
@@ -12150,6 +12175,12 @@ var methods = {
     return r.list.map(function (ts) {
       return ts.out('newlines');
     }).join('\n');
+  },
+  captureNames: function captureNames(r) {
+    return r.list.reduce(function (acc, ts) {
+      Object.assign(acc, ts.out('captureNames'));
+      return acc;
+    }, {});
   },
   json: function json(r) {
     return r.list.reduce(function (arr, ts) {

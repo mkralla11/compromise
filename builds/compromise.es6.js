@@ -9337,6 +9337,9 @@ const methods = {
   normal: function(r) {
     return r.normal;
   },
+  captureName: function(r){
+    return r.captureName;
+  },
   /** even-more normalized than normal */
   root: function(r) {
     return r.root || r.normal;
@@ -10023,6 +10026,7 @@ module.exports = matchMethods;
 const applyCaptureGroup = (term, reg) => {
   if (reg.capture) {
     term.captureGroup = true;
+    term.captureName = reg.captureName;
   } else {
     term.captureGroup = undefined;
   }
@@ -10600,7 +10604,9 @@ const parse_all = function(input) {
   }
   regs = regs.filter((f) => f);
   let captureOn = false;
+  
   regs = regs.map((reg) => {
+    let captureName;
     let hasEnd = false;
     //support [#Noun] capture-group syntax
     if (reg.charAt(0) === '[') {
@@ -10612,9 +10618,21 @@ const parse_all = function(input) {
       captureOn = false;
       hasEnd = true;
     }
+
+    const closeIdx = reg.indexOf(']'); 
+    //support [#Noun]:captureName named capture
+    if (closeIdx !== -1 && reg[closeIdx + 1] === ':') {
+      captureName = reg.slice(closeIdx + 2);
+      reg = reg.slice(0, closeIdx);
+      captureOn = false;
+      hasEnd = true;
+    }
+
+
     reg = parse_term(reg);
     if (captureOn === true || hasEnd === true) {
       reg.capture = true;
+      reg.captureName = captureName;
     }
     return reg;
   });
@@ -11150,7 +11168,16 @@ const methods = {
   csv: function(ts) {
     return ts.terms.map(t => t.normal.replace(/,/g, '')).join(',');
   },
-
+  captureNames: function(ts) {
+    return ts.terms
+      .reduce((acc, t) => {
+        const cn = t.out('captureName');
+        if(cn){
+          acc[cn] = t.out('normal');
+        }
+        return acc;
+      }, {});
+  },
   newlines: function(ts) {
     return ts.terms
       .reduce((str, t) => {
@@ -12350,6 +12377,12 @@ const methods = {
         return ts.out('newlines');
       })
       .join('\n');
+  },
+  captureNames: function(r){
+    return r.list.reduce((acc, ts) => {
+      Object.assign(acc, ts.out('captureNames'));
+      return acc;
+    }, {});
   },
   json: r => {
     return r.list.reduce((arr, ts) => {
